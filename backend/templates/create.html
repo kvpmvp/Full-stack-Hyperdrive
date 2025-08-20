@@ -16,7 +16,8 @@
   </div>
 </div>
 
-<form method="post" action="/create" class="mt-8 grid md:grid-cols-2 gap-6">
+<!-- IMPORTANT: post to /projects (the POST route in app.py) -->
+<form method="post" action="/projects" class="mt-8 grid md:grid-cols-2 gap-6">
   <!-- Basics -->
   <div class="p-5 rounded-2xl border border-slate-800 bg-slate-900/40 md:col-span-2">
     <div class="text-lg font-semibold mb-4">Basics</div>
@@ -57,11 +58,17 @@
       </div>
       <div>
         <label class="block text-sm mb-1">Token rate per 1 ALGO</label>
-        <input name="token_rate_per_algo" type="number" step="0.0001" min="0" required class="w-full rounded-xl bg-slate-900 border border-slate-700 p-2" />
+        <!-- app.py expects "token_rate" -->
+        <input name="token_rate" type="number" step="0.0001" min="0" required class="w-full rounded-xl bg-slate-900 border border-slate-700 p-2" />
       </div>
       <div>
-        <label class="block text-sm mb-1">Incentive pool (tokens reserved)</label>
-        <input name="incentive_pool" type="number" step="1" min="0" class="w-full rounded-xl bg-slate-900 border border-slate-700 p-2" />
+        <label class="block text-sm mb-1">Token pool (amount escrowed)</label>
+        <!-- app.py expects "token_pool" -->
+        <input name="token_pool" type="number" step="1" min="0" required class="w-full rounded-xl bg-slate-900 border border-slate-700 p-2" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Incentive pool (notes)</label>
+        <input name="incentive_pool" class="w-full rounded-xl bg-slate-900 border border-slate-700 p-2" />
       </div>
     </div>
   </div>
@@ -90,20 +97,13 @@
         <label class="block text-sm mb-1">Investment ask</label>
         <textarea name="investment_ask" rows="2" class="w-full rounded-xl bg-slate-900 border border-slate-700 p-2"></textarea>
       </div>
-    </div>
-  </div>
-
-  <!-- Contact -->
-  <div class="p-5 rounded-2xl border border-slate-800 bg-slate-900/40">
-    <div class="text-lg font-semibold mb-4">Contact</div>
-    <div class="grid gap-4">
-      <div>
-        <label class="block text-sm mb-1">Contact email</label>
-        <input name="email" type="email" class="w-full rounded-xl bg-slate-900 border border-slate-700 p-2" />
-      </div>
       <div>
         <label class="block text-sm mb-1">Project link</label>
         <input name="project_link" type="url" class="w-full rounded-xl bg-slate-900 border border-slate-700 p-2" />
+      </div>
+      <div>
+        <label class="block text-sm mb-1">Contact email</label>
+        <input name="contact_email" type="email" class="w-full rounded-xl bg-slate-900 border border-slate-700 p-2" />
       </div>
     </div>
   </div>
@@ -116,7 +116,8 @@
       <b>2% of the ALGO funding goal</b>. After success, 2% fee is split per spec.
     </p>
     <label class="inline-flex items-center gap-2">
-      <input name="deploy_now" type="checkbox" class="rounded border-slate-700 bg-slate-900" />
+      <!-- Make checkbox send "yes" so app.py sees it -->
+      <input name="deploy_now" value="yes" type="checkbox" class="rounded border-slate-700 bg-slate-900" />
       <span class="text-sm">Deploy on‑chain now (uses connected wallet)</span>
     </label>
     <div class="mt-4 flex gap-3">
@@ -125,4 +126,5 @@
     </div>
   </div>
 </form>
+
 {% endblock %}

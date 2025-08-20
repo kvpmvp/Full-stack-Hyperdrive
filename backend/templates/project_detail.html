@@ -13,9 +13,9 @@
         </div>
         <div class="text-sm">Deadline: {{ p.deadline_at.date() }}</div>
         {% if p.app_id %}
-        <div class="text-xs text-slate-400 mt-1">App ID: {{ p.app_id }} · Escrow: {{ p.escrow_address }}</div>
+          <div class="text-xs text-slate-400 mt-1">App ID: {{ p.app_id }} · Escrow: {{ p.escrow_address }}</div>
         {% else %}
-        <div class="text-xs text-amber-400 mt-1">This listing is not on-chain yet.</div>
+          <div class="text-xs text-amber-400 mt-1">This listing is not on-chain yet.</div>
         {% endif %}
       </div>
     </div>
@@ -50,11 +50,27 @@
 
   <!-- Right: actions -->
   <div class="space-y-4">
+
+    <!-- Wallet -->
     <div class="p-4 rounded-xl border border-slate-800">
       <div class="font-medium mb-2">Wallet</div>
       <div class="connect-wallet"></div>
       <div id="connected-address" class="mt-2 text-xs text-slate-400">Not connected</div>
     </div>
+
+    {% if not p.app_id %}
+    <!-- Deploy card (client-signed) -->
+    <div class="p-4 rounded-xl border border-slate-800">
+      <div class="font-medium mb-1">Deploy to TestNet</div>
+      <p class="text-xs text-slate-400 mb-3">
+        Deploys the stateful app + escrow using your connected wallet. Required before contributions.
+      </p>
+      <button id="btn-deploy" class="w-full px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-sm">
+        Deploy on‑chain
+      </button>
+      <div id="deploy-hint" class="mt-2 text-xs text-slate-400"></div>
+    </div>
+    {% endif %}
 
     <div class="p-4 rounded-xl border border-slate-800">
       <div class="font-medium mb-2">Contribute</div>
@@ -81,12 +97,178 @@
 
     <div class="p-4 rounded-xl border border-slate-800">
       <div class="font-medium mb-2">Admin / Creator</div>
-      <p class="text-xs text-slate-400">Use your tooling (deploy script) to opt-in ASA, fund token pool, withdraw or finalize.</p>
+      <p class="text-xs text-slate-400">Deploy, then fund token pool and manage lifecycle using the buttons above.</p>
     </div>
   </div>
 </div>
 
 <script>
   const projectId = {{ p.id }};
+
+  // --- helper: wait for signer bridge to be ready (React bundle may still be mounting)
+  async function ensureSignerReady(timeoutMs = 4000) {
+    if (window.Hyperdrive?.signAndSendGroup) return
+    let done = false
+    const onReady = () => {
+      if (done) return
+      done = true
+      window.removeEventListener('hyperdrive:bridge-ready', onReady)
+    }
+    window.addEventListener('hyperdrive:bridge-ready', onReady)
+    await Promise.race([
+      new Promise((resolve) => setTimeout(resolve, timeoutMs)),
+      new Promise((resolve) => {
+        const chk = setInterval(() => {
+          if (window.Hyperdrive?.signAndSendGroup) {
+            clearInterval(chk); resolve()
+          }
+        }, 100)
+      })
+    ])
+  }
+
+  function getActiveAddress() {
+    return (window.Hyperdrive?.getActiveAddress?.() || window.connectedAccount || null)
+  }
+
+  function setConnectedLabel(addr) {
+    const el = document.getElementById('connected-address')
+    if (!el) return
+    if (addr) {
+      el.textContent = `Connected: ${addr.slice(0,6)}...${addr.slice(-4)}`
+    } else {
+      el.textContent = 'Not connected'
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // init label
+    setConnectedLabel(getActiveAddress())
+    // react to wallet changes from React bundle
+    window.addEventListener('wallet:activeAddress', (e) => {
+      const a = e.detail?.address || null
+      setConnectedLabel(a)
+    })
+
+    const btnDeploy = document.getElementById('btn-deploy')
+    if (btnDeploy) {
+      btnDeploy.addEventListener('click', async () => {
+        try {
+          await ensureSignerReady()
+          const addr = getActiveAddress()
+          if (!addr) { alert('Connect Pera or Defly first.'); return }
+
+          const hint = document.getElementById('deploy-hint')
+          if (hint) hint.textContent = 'Building transaction...'
+
+          const res = await fetch(`/api/projects/${projectId}/deploy/build`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ creator_address: addr })
+          })
+          const data = await res.json()
+          if (!res.ok) throw new Error(data.error || 'Build failed')
+
+          if (hint) hint.textContent = 'Waiting for wallet signature...'
+          const txId = await window.Hyperdrive.signAndSendGroup(data.group)
+
+          if (hint) hint.textContent = 'Finalizing deployment...'
+          const fin = await fetch(`/api/projects/${projectId}/deploy/finalize`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ txId })
+          })
+          const finData = await fin.json()
+          if (!fin.ok) throw new Error(finData.error || 'Finalize failed')
+
+          if (hint) hint.textContent = 'Deployed! Reloading...'
+          window.location.reload()
+        } catch (e) {
+          console.error(e)
+          alert('Deploy error: ' + (e.message || e))
+          const hint = document.getElementById('deploy-hint')
+          if (hint) hint.textContent = ''
+        }
+      })
+    }
+
+    const btnContrib = document.getElementById('btn-contribute')
+    if (btnContrib) {
+      btnContrib.addEventListener('click', async () => {
+        try {
+          await ensureSignerReady()
+          const addr = getActiveAddress()
+          if (!addr) { alert('Connect wallet first.'); return }
+          const amtEl = document.getElementById('contrib-amt')
+          const amountAlgo = parseFloat(amtEl?.value || '0')
+          if (!amountAlgo || amountAlgo <= 0) { alert('Enter amount > 0'); return }
+
+          const res = await fetch(`/api/projects/${projectId}/build_contribution`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ from_address: addr, amount_algo: amountAlgo })
+          })
+          const data = await res.json()
+          if (!res.ok) throw new Error(data.error || 'Build failed')
+
+          const txId = await window.Hyperdrive.signAndSendGroup(data.group)
+          alert('Contributed! txId=' + txId)
+        } catch (e) {
+          console.error(e)
+          alert('Contribute error: ' + (e.message || e))
+        }
+      })
+    }
+
+    const btnClaim = document.getElementById('btn-claim-tokens')
+    if (btnClaim) {
+      btnClaim.addEventListener('click', async () => {
+        try {
+          await ensureSignerReady()
+          const addr = getActiveAddress()
+          if (!addr) { alert('Connect wallet first.'); return }
+
+          const res = await fetch(`/api/projects/${projectId}/build_claim_tokens`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address: addr })
+          })
+          const data = await res.json()
+          if (!res.ok) throw new Error(data.error || 'Build failed')
+
+          const txId = await window.Hyperdrive.signAndSendSingle(data.txn)
+          alert('Claim sent! txId=' + txId)
+        } catch (e) {
+          console.error(e)
+          alert('Claim error: ' + (e.message || e))
+        }
+      })
+    }
+
+    const btnRefund = document.getElementById('btn-refund')
+    if (btnRefund) {
+      btnRefund.addEventListener('click', async () => {
+        try {
+          await ensureSignerReady()
+          const addr = getActiveAddress()
+          if (!addr) { alert('Connect wallet first.'); return }
+
+          const res = await fetch(`/api/projects/${projectId}/build_refund`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address: addr })
+          })
+          const data = await res.json()
+          if (!res.ok) throw new Error(data.error || 'Build failed')
+
+          const txId = await window.Hyperdrive.signAndSendSingle(data.txn)
+          alert('Refund sent! txId=' + txId)
+        } catch (e) {
+          console.error(e)
+          alert('Refund error: ' + (e.message || e))
+        }
+      })
+    }
+  })
 </script>
 {% endblock %}

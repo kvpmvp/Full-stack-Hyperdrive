@@ -27,10 +27,10 @@
       © 2025 Hyperdrive — Prototype
     </footer>
 
-    <!-- Vanilla helpers (contribute / claim / refund) -->
-    <script src="/static/js/wallet.js"></script>
+    <!-- React wallet widget (Pera/Defly) — mounts signer bridge on window.Hyperdrive -->
+    <script src="/static/react/wallet-widget.js" defer></script>
 
-    <!-- React wallet widget, loaded once for all pages -->
-    <script src="/static/react/wallet-widget.js"></script>
+    <!-- Optional legacy helpers; keep after the widget so they can use the bridge if needed -->
+    <script src="/static/js/wallet.js" defer></script>
   </body>
 </html>
