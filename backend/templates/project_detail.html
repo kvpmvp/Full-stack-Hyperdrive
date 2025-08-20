@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="grid md:grid-cols-3 gap-8">
+  <!-- Left: pitch content -->
   <div class="md:col-span-2 space-y-4">
     <div class="flex items-start gap-4">
       <img src="/static/logo.svg" class="h-10 w-10" />
@@ -47,14 +48,18 @@
     </div>
   </div>
 
+  <!-- Right: actions -->
   <div class="space-y-4">
+    <div class="p-4 rounded-xl border border-slate-800">
+      <div class="font-medium mb-2">Wallet</div>
+      <div class="connect-wallet"></div>
+      <div id="connected-address" class="mt-2 text-xs text-slate-400">Not connected</div>
+    </div>
+
     <div class="p-4 rounded-xl border border-slate-800">
       <div class="font-medium mb-2">Contribute</div>
       {% if p.app_id %}
       <div class="space-y-2">
-        <label class="text-sm">From Wallet</label>
-        <button id="btn-connect" class="w-full px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm">Connect Wallet</button>
-        <div id="connected-address" class="text-xs text-slate-400"></div>
         <label class="text-sm">Amount (ALGO)</label>
         <input id="contrib-amt" type="number" step="0.01" class="w-full mt-1 rounded-xl bg-slate-900 border border-slate-700 p-2" />
         <button id="btn-contribute" class="w-full mt-2 px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm">Contribute</button>
@@ -82,6 +87,6 @@
 </div>
 
 <script>
-const projectId = {{ p.id }};
+  const projectId = {{ p.id }};
 </script>
 {% endblock %}

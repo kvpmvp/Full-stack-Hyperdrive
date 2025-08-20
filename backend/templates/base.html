@@ -1,17 +1,20 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Hyperdrive</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="icon" href="/static/logo.svg" />
+    <meta name="name" content="Hyperdrive" />
   </head>
   <body class="bg-slate-950 text-slate-100">
     <header class="border-b border-slate-800">
       <div class="max-w-6xl mx-auto flex items-center gap-4 p-4">
-        <img src="/static/logo.svg" class="h-10 w-10" alt="Hyperdrive logo" />
-        <h1 class="text-2xl font-bold tracking-tight">Hyperdrive</h1>
+        <a href="/" class="flex items-center gap-3 group">
+          <img src="/static/logo.svg" class="h-10 w-10" alt="Hyperdrive logo" />
+          <h1 class="text-2xl font-bold tracking-tight group-hover:text-indigo-400 transition-colors">Hyperdrive</h1>
+        </a>
         <span class="ml-auto text-xs opacity-70">Network: {{ network }}</span>
       </div>
     </header>
@@ -24,9 +27,10 @@
       © 2025 Hyperdrive — Prototype
     </footer>
 
-    <script src="https://unpkg.com/@perawallet/connect/dist/perawalletconnect.umd.min.js"></script>
-    <script src="https://unpkg.com/defly-connect/dist/defly-connect.umd.min.js"></script>
-    <script src="https://unpkg.com/@walletconnect/sign-client/dist/index.umd.js"></script>
+    <!-- Vanilla helpers (contribute / claim / refund) -->
     <script src="/static/js/wallet.js"></script>
+
+    <!-- React wallet widget, loaded once for all pages -->
+    <script src="/static/react/wallet-widget.js"></script>
   </body>
 </html>
