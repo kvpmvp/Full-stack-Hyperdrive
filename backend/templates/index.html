@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex flex-col md:flex-row gap-6 md:items-center">
+  <div class="flex items-center gap-3">
+    <img src="/static/logo.svg" class="h-12 w-12" />
+    <div>
+      <div class="text-3xl font-semibold">Back builders on Algorand</div>
+      <div class="text-slate-400">Discover projects and contribute safely via smart contracts.</div>
+    </div>
+  </div>
+  <div class="ml-auto">
+    <a href="/create" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500">
+      <span class="font-medium">Create Project</span>
+    </a>
+  </div>
+</div>
+
+<section class="mt-10 grid md:grid-cols-3 gap-6">
+  <div class="p-5 rounded-2xl border border-slate-800 bg-slate-900/40">
+    <div class="text-lg font-semibold mb-2">1. Post your pitch</div>
+    <p class="text-slate-400 text-sm">Publish a pitch deck with your token details & funding goal. No admin review required.</p>
+  </div>
+  <div class="p-5 rounded-2xl border border-slate-800 bg-slate-900/40">
+    <div class="text-lg font-semibold mb-2">2. Smart escrow</div>
+    <p class="text-slate-400 text-sm">Funds are held on-chain until the goal is met or the 60-day period expires.</p>
+  </div>
+  <div class="p-5 rounded-2xl border border-slate-800 bg-slate-900/40">
+    <div class="text-lg font-semibold mb-2">3. Tokens or refunds</div>
+    <p class="text-slate-400 text-sm">On success, contributors claim tokens; on failure, they claim refunds.</p>
+  </div>
+</section>
+
+<section class="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+  {% for p in projects %}
+  <div class="rounded-2xl border border-slate-800 bg-slate-900/40 hover:border-indigo-600 transition">
+    <div class="p-5">
+      <div class="text-sm uppercase tracking-widest text-indigo-400">{{ p.category }}</div>
+      <div class="mt-1 text-xl font-semibold">{{ p.name }}</div>
+      <div class="text-sm text-slate-400">by {{ p.creator }}</div>
+      <div class="mt-4 text-sm">
+        <div class="flex justify-between"><span>Goal</span><span>{{ '%.2f' % (p.goal_microalgos / 1_000_000) }} ALGO</span></div>
+        <div class="flex justify-between"><span>Token</span><span>ASA #{{ p.token_asset_id }} @ {{ '%.2f' % p.token_rate_per_algo }}/ALGO</span></div>
+        <div class="flex justify-between"><span>Deadline</span><span>{{ p.deadline_at.date() }}</span></div>
+      </div>
+      <div class="mt-5 flex gap-2">
+        <a href="/projects/{{ p.id }}" class="flex-1 text-center px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700">View</a>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="col-span-3 text-slate-400">No projects yet. Be the first to <a class="underline" href="/create">create one</a>.</div>
+  {% endfor %}
+</section>
+
+<section class="mt-14">
+  <div class="text-2xl font-semibold mb-3">FAQ</div>
+  <div class="grid gap-4">
+    <div class="p-4 rounded-xl border border-slate-800">
+      <div class="font-medium">Is Hyperdrive audited?</div>
+      <div class="text-sm text-slate-400">This is a prototype. Review and audit before mainnet.</div>
+    </div>
+    <div class="p-4 rounded-xl border border-slate-800">
+      <div class="font-medium">Which wallets are supported?</div>
+      <div class="text-sm text-slate-400">Pera, Defly, Exodus via WalletConnect.</div>
+    </div>
+  </div>
+</section>
+{% endblock %}
